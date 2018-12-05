@@ -7,6 +7,7 @@ module.exports = {
         // BigchainDB server instance
         const API_PATH = 'http://50.116.41.123:9984/api/v1/';
         const API_PATH_ = 'http://198.74.54.95:9984/api/v1/';
+        const LOCAL_API_PATH = 'http://localhost:9984/api/v1/';
 
         // Create a new keypair.
         const alice = new driver.Ed25519Keypair();
@@ -32,7 +33,7 @@ module.exports = {
         const txSigned = driver.Transaction.signTransaction(tx, alice.privateKey);
 
         // Send the transaction off to BigchainDB
-        const conn = new driver.Connection(API_PATH_);
+        const conn = new driver.Connection(LOCAL_API_PATH);
 
         conn.postTransactionCommit(txSigned)
             .then(retrievedTx =>
