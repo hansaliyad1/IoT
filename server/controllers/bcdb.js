@@ -1,18 +1,12 @@
+const request   = require('request');
 const driver    = require('bigchaindb-driver');
 const bip39     = require('bip39');
+const alice     = new driver.Ed25519Keypair(bip39.mnemonicToSeed('secret').slice(0, 32));
 
 
 module.exports = {
 
     createTransactions(req, res) {
-
-        // BigchainDB server instance
-        const API_PATH = 'http://50.116.41.123:9984/api/v1/';
-        const API_PATH_ = 'http://198.74.54.95:9984/api/v1/';
-        const LOCAL_API_PATH = 'http://localhost:9984/api/v1/';
-
-        // Create a new keypair.
-        const alice = new driver.Ed25519Keypair(bip39.mnemonicToSeed('secret').slice(0, 32));;
 
         // Construct a transaction payload
         const tx = driver.Transaction.makeCreateTransaction(
@@ -35,12 +29,34 @@ module.exports = {
         const txSigned = driver.Transaction.signTransaction(tx, alice.privateKey);
 
         // Send the transaction off to BigchainDB
-        const conn = new driver.Connection(API_PATH);
+        const conn = new driver.Connection(process.env.API_PATH);
 
         conn.postTransactionCommit(txSigned)
-            .then(retrievedTx =>
-                console.log('Transaction', retrievedTx.id, 'successfully posted.')
-            );
+            .then(retrievedTx => {
+                console.log('Transaction', retrievedTx.id, 'successfully posted.');
+                res.json({ success: true, message: 'Successfully Posted.' });
+            });
+
+    },
+
+    retrieveTransactions(req, res) {
+
+        let options = {
+            method: 'GET',
+            url: process.env.API_PATH + 'assets/',
+            qs: { search: 'berlin' },
+            headers:
+                { 'Postman-Token': '2e1f19fb-9a8c-4c6c-aaa7-063b31789428',
+                    'cache-control': 'no-cache' } };
+
+        request(options, (error, response, body) => {
+            if (error) {
+                res.json({ success: false, message: error })
+            }
+            else {
+                res.json({ success: true, message: JSON.parse(body) })
+            }
+        });
 
     }
 
