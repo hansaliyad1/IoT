@@ -8,7 +8,9 @@
 /tmp
 
 # dependencies
-/node_modules
+!node_modules/
+node_modules/*
+!node_modules/bigchaindb-driver
 
 # IDEs and editors
 /.idea

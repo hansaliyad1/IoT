@@ -1,4 +1,6 @@
-const driver = require('bigchaindb-driver');
+const driver    = require('bigchaindb-driver');
+const bip39     = require('bip39');
+
 
 module.exports = {
 
@@ -10,7 +12,7 @@ module.exports = {
         const LOCAL_API_PATH = 'http://localhost:9984/api/v1/';
 
         // Create a new keypair.
-        const alice = new driver.Ed25519Keypair();
+        const alice = new driver.Ed25519Keypair(bip39.mnemonicToSeed('secret').slice(0, 32));;
 
         // Construct a transaction payload
         const tx = driver.Transaction.makeCreateTransaction(
@@ -33,7 +35,7 @@ module.exports = {
         const txSigned = driver.Transaction.signTransaction(tx, alice.privateKey);
 
         // Send the transaction off to BigchainDB
-        const conn = new driver.Connection(LOCAL_API_PATH);
+        const conn = new driver.Connection(API_PATH);
 
         conn.postTransactionCommit(txSigned)
             .then(retrievedTx =>
