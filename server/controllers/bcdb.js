@@ -8,55 +8,75 @@ module.exports = {
 
     createTransactions(req, res) {
 
-        // Construct a transaction payload
-        const tx = driver.Transaction.makeCreateTransaction(
-            // Define the asset to store, in this example it is the current temperature
-            // (in Celsius) for the city of Berlin.
-            { city: 'Berlin, DE', temperature: 22, datetime: new Date().toString() },
+        if (!req.body.city) {
+            res.json({ success: false, message: 'Please provide City name.' });
+        }
+        else if (!req.body.temperature) {
+            res.json({ success: false, message: 'Please provide temperature.' });
+        }
+        else if (!req.body.metadata) {
+            res.json({ success: false, message: 'Please provide metadata.' });
+        }
+        else {
 
-            // Metadata contains information about the transaction itself
-            // (can be `null` if not needed)
-            { what: 'My first BigchainDB transaction' },
+            // Construct a transaction payload
+            const tx = driver.Transaction.makeCreateTransaction(
+                // Define the asset to store, in this example it is the current temperature
+                // (in Celsius) for the city of Berlin.
+                { city: req.body.city, temperature: req.body.temperature, datetime: new Date().toString() },
 
-            // A transaction needs an output
-            [ driver.Transaction.makeOutput(
-                driver.Transaction.makeEd25519Condition(alice.publicKey))
-            ],
-            alice.publicKey
-        );
+                // Metadata contains information about the transaction itself
+                // (can be `null` if not needed)
+                { what: req.body.metadata },
 
-        // Sign the transaction with private keys
-        const txSigned = driver.Transaction.signTransaction(tx, alice.privateKey);
+                // A transaction needs an output
+                [ driver.Transaction.makeOutput(
+                    driver.Transaction.makeEd25519Condition(alice.publicKey))
+                ],
+                alice.publicKey
+            );
 
-        // Send the transaction off to BigchainDB
-        const conn = new driver.Connection(process.env.API_PATH);
+            // Sign the transaction with private keys
+            const txSigned = driver.Transaction.signTransaction(tx, alice.privateKey);
 
-        conn.postTransactionCommit(txSigned)
-            .then(retrievedTx => {
-                console.log('Transaction', retrievedTx.id, 'successfully posted.');
-                res.json({ success: true, message: 'Successfully Posted.' });
-            });
+            // Send the transaction off to BigchainDB
+            const conn = new driver.Connection(process.env.API_PATH);
+
+            conn.postTransactionCommit(txSigned)
+                .then(retrievedTx => {
+                    console.log('Transaction', retrievedTx.id, 'successfully posted.');
+                    res.json({ success: true, message: 'Successfully Posted.', txID: retrievedTx.id });
+                });
+
+        }
 
     },
 
-    retrieveTransactions(req, res) {
+    searchTransactions(req, res) {
 
-        let options = {
-            method: 'GET',
-            url: process.env.API_PATH + 'assets/',
-            qs: { search: 'berlin' },
-            headers:
-                { 'Postman-Token': '2e1f19fb-9a8c-4c6c-aaa7-063b31789428',
-                    'cache-control': 'no-cache' } };
+        if (!req.params.term) {
+            res.json({ success: false, message: 'Please provide search term' });
+        }
+        else {
 
-        request(options, (error, response, body) => {
-            if (error) {
-                res.json({ success: false, message: error })
-            }
-            else {
-                res.json({ success: true, message: JSON.parse(body) })
-            }
-        });
+            let options = {
+                method: 'GET',
+                url: process.env.API_PATH + 'assets/',
+                qs: { search: req.params.term },
+                headers:
+                    { 'Postman-Token': '2e1f19fb-9a8c-4c6c-aaa7-063b31789428',
+                        'cache-control': 'no-cache' } };
+
+            request(options, (error, response, body) => {
+                if (error) {
+                    res.json({ success: false, message: error })
+                }
+                else {
+                    res.json({ success: true, message: JSON.parse(body) })
+                }
+            });
+
+        }
 
     }
 
